@@ -1,15 +1,21 @@
-# Romaji Parser
-<img width="1513" height="926" alt="image" src="https://github.com/user-attachments/assets/bd26e410-c8f5-49ba-94f6-498091752450" />
+# JLPT Fast
+Learn JLPT fast through quizzes
 
-A simple parser for converting Romaji input into Japanese Kana and Kanji.
-
-## Installation
+Roadmap:
+- Accounts (manage user test data, vocab data, goals, etc)
+- Add a learning section (vocab, sentences)
+- Add an exam section, which assess you using real JLPT exams
+- Vocab missed in quizzes are added to your training set
+- Premium tier (AI chatbot scenarios), unlimited JLPT quizzes & exams 
 
 ## Features
 
-- Converts common Romaji spellings to Hiragana.
-- Converts common Romaji spellings to Katakana.
-- Handles basic double consonants and long vowels.
+- Form sentences and see their translation, just type romaji
+<img width="406" height="697" alt="image" src="https://github.com/user-attachments/assets/794b25cf-e6dd-4360-975e-64125b6ebcd6" />
+
+- Practice with quizzes made to prepare you for JLPT N5
+<img width="587" height="631" alt="image" src="https://github.com/user-attachments/assets/eefefbd6-fa00-44e7-aa21-83798c80a964" />
+
 
 ## Contributing
 
