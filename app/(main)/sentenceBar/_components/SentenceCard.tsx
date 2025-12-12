@@ -143,7 +143,7 @@ const SentenceCard = ({ input, context }: SentenceCardProps) => {
         <div className="group relative flex flex-col items-center animate-in fade-in zoom-in duration-300">
             {/* Tooltip for All Words */}
             {tooltipProps && (
-                <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 bottom-[100px]">
+                <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 -top-2 -translate-y-full left-1/2 -translate-x-1/2 w-max pointer-events-none">
                     <Tooltip {...tooltipProps} />
                 </div>
             )}
@@ -177,7 +177,7 @@ const SentenceCard = ({ input, context }: SentenceCardProps) => {
             <div className="flex flex-col items-center mt-3 space-y-0.5">
                 {/* Reading */}
                 {/* Reading (Invisible for particles to preserve height alignment) */}
-                <p className={`text-[0.9rem] text-muted-foreground/80 font-sans tracking-wider text-center ${isGrammarParticle ? 'invisible' : ''}`}>
+                <p className={`text-[0.9rem] text-muted-foreground/80 tracking-wider text-center ${isGrammarParticle ? 'invisible' : ''}`}>
                     {data.subText || '\u00A0'}
                 </p>
 

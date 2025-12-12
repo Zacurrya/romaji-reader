@@ -7,6 +7,9 @@ import { listeningQuestions } from "./contexts/listening_questions";
 import { Question } from "./contexts/types";
 import { motion, AnimatePresence } from "framer-motion";
 import QuizInput from "./_components/QuizInput";
+import NextButton from "./_components/NextButton";
+import ChoiceList from "./_components/ChoiceList";
+import QuizHistoryBar from "./_components/QuizHistoryBar";
 
 export default function N5QuizPage() {
     // Game State
@@ -197,17 +200,7 @@ export default function N5QuizPage() {
                     >
                         {/* Progress Bar */}
                         {/* History Bar */}
-                        <div className="flex gap-2 w-full mb-8 px-1">
-                            {history.map((result, idx) => (
-                                <div
-                                    key={idx}
-                                    className={`h-2 flex-1 rounded-full transition-all duration-300 ${result === true ? 'bg-green-500 shadow-sm shadow-green-200' :
-                                        result === false ? 'bg-red-500 shadow-sm shadow-red-200' :
-                                            idx === currentQuestionIndex ? 'bg-blue-400 scale-110' : 'bg-gray-200'
-                                        }`}
-                                />
-                            ))}
-                        </div>
+                        <QuizHistoryBar history={history} currentQuestionIndex={currentQuestionIndex} />
 
                         {/* Question Card */}
                         <div className="bg-white rounded-3xl p-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] border border-gray-100 mb-6 text-center">
@@ -256,50 +249,25 @@ export default function N5QuizPage() {
 
                             {/* --- CHOICE TYPE --- */}
                             {!isInputType && currentQ.options && (
-                                <div className="grid grid-cols-1 gap-3">
-                                    {currentQ.options.map((option, idx) => {
-                                        let styleClass = "border-gray-200 hover:border-gray-300 hover:bg-gray-50";
-
-                                        if (isAnswered) {
-                                            if (option === currentQ.correctAnswer || (Array.isArray(currentQ.correctAnswer) && currentQ.correctAnswer.includes(option))) {
-                                                styleClass = "bg-green-50 border-green-200 text-green-700";
-                                            } else if (option === selectedOption) {
-                                                styleClass = "bg-red-50 border-red-200 text-red-700";
-                                            } else {
-                                                styleClass = "opacity-50 border-gray-100";
-                                            }
-                                        } else if (idx === focusedOptionIndex) {
-                                            styleClass = "border-blue-400 bg-blue-50 text-blue-800 shadow-md ring-2 ring-blue-100";
-                                        }
-
-                                        return (
-                                            <button
-                                                key={idx}
-                                                onClick={() => handleOptionSelect(option)}
-                                                onMouseEnter={() => setFocusedOptionIndex(idx)}
-                                                disabled={isAnswered}
-                                                className={`w-full py-4 px-6 rounded-xl border text-left transition-all duration-200 text-lg font-medium ${styleClass}`}
-                                            >
-                                                {option}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
+                                <ChoiceList
+                                    options={currentQ.options}
+                                    correctAnswer={currentQ.correctAnswer}
+                                    selectedOption={selectedOption}
+                                    isAnswered={isAnswered}
+                                    focusedOptionIndex={focusedOptionIndex}
+                                    onOptionSelect={handleOptionSelect}
+                                    onOptionFocus={setFocusedOptionIndex}
+                                />
                             )}
                         </div>
 
                         {/* Next Button */}
                         <div className="flex justify-end h-14">
                             {isAnswered && (
-                                <motion.button
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    autoFocus
+                                <NextButton
+                                    isLastQuestion={currentQuestionIndex >= questions.length - 1}
                                     onClick={nextQuestion}
-                                    className="bg-gray-900 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-gray-900/20 hover:bg-gray-800 transition-colors"
-                                >
-                                    {currentQuestionIndex < questions.length - 1 ? "Next Question" : "Finish Quiz"}
-                                </motion.button>
+                                />
                             )}
                         </div>
                     </motion.div>
@@ -318,7 +286,7 @@ export default function N5QuizPage() {
                             </div>
 
                             <h2 className="text-3xl font-serif font-bold text-gray-900 mb-2">
-                                {isPassed ? "Congratulations!" : "Keep Trying!"}
+                                {isPassed ? "Congratulations!" : "Keep Practicing!"}
                             </h2>
                             <p className="text-gray-500 mb-8">
                                 You scored <span className="text-gray-900 font-bold">{score}</span> out of {questions.length}

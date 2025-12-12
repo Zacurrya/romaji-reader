@@ -1,6 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
-import { toKana } from "wanakana";
+
+import { useEffect } from "react";
+import { useRomajiInput } from "../../../hooks/useRomajiInput";
 
 type QuizInputProps = {
     value: string;
@@ -12,38 +13,15 @@ type QuizInputProps = {
 };
 
 export default function QuizInput({ value, onChange, onSubmit, disabled, autoFocus, placeholder = "Type answer..." }: QuizInputProps) {
-    const [romaji, setRomaji] = useState("");
+    const { resetRomaji, processInput } = useRomajiInput();
 
     // Reset romaji when value is cleared externally (e.g. new question)
     useEffect(() => {
-        if (value === "") setRomaji("");
-    }, [value]);
+        if (value === "") resetRomaji();
+    }, [value, resetRomaji]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const inputType = (e.nativeEvent as any).inputType;
-        const data = (e.nativeEvent as any).data;
-        let newRomaji = romaji;
-
-        if (inputType === "insertText" && data) {
-            newRomaji += data;
-        } else if (inputType === "deleteContentBackward") {
-            newRomaji = newRomaji.slice(0, -1);
-        } else if (!e.target.value) {
-            // Clear all
-            newRomaji = "";
-        } else {
-            // Complex edit (paste, etc) - simple fallback: try to use the current value as best effort or reset
-            // For N5 quiz, preventing cheating via paste is fine, or just not supporting it perfectly.
-            // Let's just assume reset if unclear to avoid stuck state.
-            // Or better: don't update romaji, but update value? No, we drive value from romaji.
-            // If we reset romaji, the input clears.
-            // Let's try to map the new value back? hard.
-            // We'll just leave it be if it's not a standard type/delete.
-        }
-
-        setRomaji(newRomaji);
-        const kana = toKana(newRomaji);
-        onChange(kana);
+        processInput(e, value, onChange);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -63,7 +41,7 @@ export default function QuizInput({ value, onChange, onSubmit, disabled, autoFoc
                     onChange={handleChange}
                     onKeyDown={handleKeyDown}
                     disabled={disabled}
-                    className="flex-1 h-full bg-transparent text-2xl text-gray-800 font-medium font-sans outline-none placeholder:text-gray-300 text-center"
+                    className="flex-1 h-full bg-transparent text-2xl text-gray-800 font-medium outline-none placeholder:text-gray-300 text-center"
                     placeholder={placeholder}
                     autoFocus={autoFocus}
                     autoComplete="off"

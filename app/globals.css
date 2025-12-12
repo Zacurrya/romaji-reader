@@ -108,7 +108,7 @@ body {
   background-color: var(--background);
   color: var(--foreground);
 
-  font-family: var(--font-geist-sans), "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+  font-family: var(--font-geist-sans), var(--font-noto-serif-jp), "Hiragino Mincho ProN", serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

@@ -192,7 +192,7 @@ const LiveCard = ({ input, context, onValidationChange, onWordSelect }: LiveCard
                             </div>
 
                             {/* Typography */}
-                            <p className="text-xs text-muted-foreground font-sans tracking-wider text-center">
+                            <p className="text-xs text-muted-foreground tracking-wider text-center">
                                 {option.subText}
                             </p>
 
