@@ -1,27 +1,9 @@
 # Romaji Parser
+<img width="1513" height="926" alt="image" src="https://github.com/user-attachments/assets/bd26e410-c8f5-49ba-94f6-498091752450" />
 
-A simple parser for converting Romaji input into Japanese kana (Hiragana/Katakana).
+A simple parser for converting Romaji input into Japanese Kana and Kanji.
 
 ## Installation
-
-```bash
-# Example: if this were a Python package
-pip install romaji-parser
-```
-
-## Usage
-
-```python
-# Example: if this were a Python package
-from romaji_parser import RomajiParser
-
-parser = RomajiParser()
-hiragana = parser.to_hiragana("konnichiwa")
-print(hiragana) # Output: こんにちは
-
-katakana = parser.to_katakana("konnichiwa")
-print(katakana) # Output: コンニチハ
-```
 
 ## Features
 
@@ -32,5 +14,4 @@ print(katakana) # Output: コンニチハ
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request.
-```
 
