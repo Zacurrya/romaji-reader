@@ -9,10 +9,9 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        // Use MyMemory Translation API (Free tier, no key required for low volume)
-        // Source: Japanese (ja), Target: English (en)
+        // Use Google Translate GTX API (Unofficial, reliable, high quality)
         const response = await fetch(
-            `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ja|en`
+            `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=en&dt=t&q=${encodeURIComponent(text)}`
         );
 
         if (!response.ok) {
@@ -21,8 +20,11 @@ export async function GET(request: NextRequest) {
 
         const data = await response.json();
 
-        // MyMemory returns detailed matches, but responseData.translatedText is the best guess
-        const translatedText = data.responseData?.translatedText || 'Translation unavailable';
+        // GTX returns: [[["Translated Text", "Original", ...], ...], ...]
+        // We join parts if multiple segments
+        const translatedText = data[0]
+            .map((segment: any) => segment[0])
+            .join('');
 
         return NextResponse.json({ translation: translatedText });
 
