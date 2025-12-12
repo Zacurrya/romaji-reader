@@ -6,6 +6,7 @@ import LiveCard from "./search/_components/LiveCard";
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import SentenceBar from "./components/sentenceBar/_components/SentenceBar";
+import TranslatedSentence from "./components/sentenceBar/_components/TranslatedSentence";
 
 export default function Home() {
   const [input, setInput] = useState("");
@@ -46,6 +47,13 @@ export default function Home() {
     }
   };
 
+  const handleWordSelect = (selectedWord: string) => {
+    // Commit selected word directly
+    setCommittedWords((prev) => [...prev, selectedWord]);
+    setInput("");
+    setIsValidInput(false);
+  };
+
   return (
     <div className="h-screen overflow-hidden relative">
       <Header />
@@ -56,10 +64,16 @@ export default function Home() {
 
           {/* Sentence Bar */}
           <SentenceBar words={committedWords} />
+          <TranslatedSentence words={committedWords} />
 
           {/* LiveCard */}
           <div className="mb-6 animate-in fade-in zoom-in duration-700">
-            <LiveCard input={input} onValidationChange={setIsValidInput} />
+            <LiveCard
+              input={input}
+              context={committedWords}
+              onValidationChange={setIsValidInput}
+              onWordSelect={handleWordSelect}
+            />
           </div>
 
           {/* Search Bar */}

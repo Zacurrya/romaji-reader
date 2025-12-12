@@ -7,7 +7,9 @@ import { getCachedWord, setCachedWord } from "@/utils/wordCache";
 
 type LiveCardProps = {
     input: string;
+    context: string[];
     onValidationChange?: (isValid: boolean) => void;
+    onWordSelect?: (selectedWord: string) => void;
 };
 
 type CardData = {
@@ -18,151 +20,177 @@ type CardData = {
     loading: boolean;
 };
 
-const LiveCard = ({ input, onValidationChange }: LiveCardProps) => {
-    const [data, setData] = useState<CardData>({
-        mainText: "",
-        meaning: "WAITING...",
-        subText: "/ ... /",
-        imageUrl: "",
-        loading: false,
-    });
+const LiveCard = ({ input, context, onValidationChange, onWordSelect }: LiveCardProps) => {
+    // Store array of options for multiple meanings
+    const [options, setOptions] = useState<CardData[]>([]);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (!input) {
-            setData({
-                mainText: "",
-                meaning: "",
-                subText: "",
-                imageUrl: "",
-                loading: false
-            });
+            setOptions([]);
             return;
         }
 
         const fetchData = async () => {
-            // Check Cache First
-            const cached = getCachedWord(input);
-            if (cached) {
-                setData({
-                    mainText: cached.kana,
-                    meaning: cached.meaning,
-                    subText: cached.subText,
-                    imageUrl: cached.imageUrl,
-                    loading: false
-                });
+            // For multiple results, we might skip cache or modify cache structure. 
+            // To simplify given complexity: We always fetch to get all meanings if cache only stores one.
+            // BUT, if we want to be fast, we stick to fetching.
+            // Rate limit concern: MyMemory and Unsplash. 
+            // Let's rely on API.
 
-                // Validate from cache
-                const currentRomaji = toRomaji(input);
-                const isValid = !/[a-zA-Z]/.test(input) && (cached.meaning !== "NO DEFINITION" || isParticle(currentRomaji));
-                if (onValidationChange) onValidationChange(isValid);
-                return;
-            }
-
-            setData((prev) => ({ ...prev, loading: true }));
+            setLoading(true);
 
             const currentRomaji = toRomaji(input);
 
             try {
-                // 1. Fetch Meaning & Japanese Word
-                const meanRes = await fetch(`/api/word-meaning?romaji=${encodeURIComponent(input)}`);
+                // 1. Fetch Meanings & Words
+                const meanRes = await fetch(`/api/word-meaning?romaji=${encodeURIComponent(input)}&context=${encodeURIComponent(JSON.stringify(context))}`);
 
-                let newMeaning = "NO DEFINITION";
-                let newMainText = input; // Default to input (Kana)
-                let newReading = input;
-                let newImageUrl = "";
+                let results: CardData[] = [];
 
                 if (meanRes.ok) {
                     const json = await meanRes.json();
                     if (json.words && json.words.length > 0) {
-                        newMeaning = json.words[0].meaning.toUpperCase();
-                        newMainText = json.words[0].word || json.words[0].furigana || input;
-                        newReading = json.words[0].furigana || input;
+                        // Take up to 3 results
+                        const candidates = json.words.slice(0, 3);
+
+                        // We need ONE image search for the PRIMARY meaning likely, or per meaning.
+                        // To avoid spamming Unsplash, we'll fetch only for the first one for now or just generic background.
+                        // Actually, user wants distinct cards. They should ideally have distinct images.
+                        // Let's do it right: Fetch image for each.
+
+                        const promises = candidates.map(async (entry: any) => {
+                            const meaning = entry.meaning?.toUpperCase() || "NO DEFINITION";
+                            const mainText = entry.word || entry.furigana || input;
+                            const reading = entry.furigana || input;
+                            const subText = `/ ${reading} /`;
+
+                            let imageUrl = "";
+
+                            if (meaning !== "NO DEFINITION" && !isParticle(currentRomaji)) {
+                                const searchTerm = meaning.split(',')[0].trim();
+                                // Basic cleanup
+                                try {
+                                    // Add random param to prevent identical image if meanings essentially same? No, browser cache will handle repeated requests.
+                                    // Actually we will benefit from Promise.all
+                                    const imgRes = await fetch(`/api/image?query=${encodeURIComponent(searchTerm)}`);
+                                    if (imgRes.ok) {
+                                        const imgJson = await imgRes.json();
+                                        imageUrl = imgJson.imageUrl;
+                                    }
+                                } catch (e) { console.error(e); }
+                            }
+
+                            return {
+                                mainText,
+                                meaning,
+                                subText,
+                                imageUrl,
+                                loading: false
+                            };
+                        });
+
+                        results = await Promise.all(promises);
                     }
                 }
 
-                // Determine Validity
-                const isValid = !/[a-zA-Z]/.test(input) && (newMeaning !== "NO DEFINITION" || isParticle(currentRomaji));
+                // Fallback if empty (e.g. typing nonsense)
+                if (results.length === 0) {
+                    results = [{
+                        mainText: input,
+                        meaning: "WAITING...",
+                        subText: `/ ${input} /`,
+                        imageUrl: "",
+                        loading: false
+                    }];
+                }
+
+                setOptions(results);
+
+                // Validate (based on at least one valid result)
+                const hasValid = results.some(r => r.meaning !== "WAITING..." && r.meaning !== "NO DEFINITION");
+                const isValid = !/[a-zA-Z]/.test(input) && (hasValid || isParticle(currentRomaji));
                 if (onValidationChange) onValidationChange(isValid);
-
-                // 2. Fetch Image (if meaning exists & not particle)
-                if (newMeaning !== "NO DEFINITION" && !isParticle(currentRomaji)) {
-                    // Clean up meaning for search (remove commas, take first word)
-                    const searchTerm = newMeaning.split(',')[0].trim();
-
-                    try {
-                        const imgRes = await fetch(`/api/image?query=${encodeURIComponent(searchTerm)}`);
-                        if (imgRes.ok) {
-                            const imgJson = await imgRes.json();
-                            newImageUrl = imgJson.imageUrl;
-                        }
-                    } catch (e) {
-                        console.error(e);
-                    }
-                }
-
-                const finalData = {
-                    mainText: newMainText,
-                    meaning: newMeaning,
-                    subText: `/ ${newReading} /`,
-                    imageUrl: newImageUrl,
-                    loading: false
-                };
-
-                // Cache the result for future use
-                setCachedWord(input, {
-                    meaning: newMeaning,
-                    kana: newMainText,
-                    subText: `/ ${newReading} /`,
-                    imageUrl: newImageUrl
-                });
-
-                setData(finalData);
 
             } catch (e) {
                 console.error(e);
-                setData((prev) => ({ ...prev, loading: false, meaning: "ERROR" }));
+                setOptions([]); // Should show error state
+            } finally {
+                setLoading(false);
             }
         };
 
-        const timer = setTimeout(fetchData, 400);
+        const timer = setTimeout(fetchData, 500); // 500ms debounce
         return () => clearTimeout(timer);
 
-    }, [input]);
+    }, [input, context]);
+
+    if (!input) return null;
+
+    // Determine layout: Single generic card vs Multiple options
+    // If loading, show skeleton.
 
     return (
-        <div className="pt-10 pb-5 flex flex-col items-center justify-center animate-in fade-in duration-500 w-full">
-            {/* Image Card */}
-            <div className="relative w-60 h-60 mb-6 bg-white rounded-[2.5rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] flex items-center justify-center overflow-hidden">
-                {data.imageUrl ? (
-                    <div className="relative w-full h-full p-6">
-                        <Image
-                            src={data.imageUrl}
-                            alt="Visualization"
-                            fill
-                            className={`object-cover rounded-[1.5rem] transition-opacity duration-700 ${data.loading ? 'opacity-50 blur-sm' : 'opacity-100'}`}
-                            unoptimized
-                        />
+        <div className="pt-10 pb-5 w-full">
+            <div className={`flex flex-wrap items-center justify-center gap-6 transition-all duration-500 ${loading ? 'opacity-50' : 'opacity-100'}`}>
+
+                {options.map((option, idx) => (
+                    <div
+                        key={idx}
+                        onClick={() => onWordSelect && onWordSelect(option.mainText)}
+                        className="group cursor-pointer flex flex-col items-center justify-center animate-in fade-in zoom-in duration-500 fill-mode-backwards"
+                        style={{ animationDelay: `${idx * 100}ms` }}
+                    >
+                        {/* Image Card */}
+                        <div className="relative w-48 h-48 mb-4 bg-white rounded-[2rem] shadow-[0_15px_40px_-10px_rgba(0,0,0,0.08)] group-hover:shadow-[0_20px_50px_-10px_rgba(0,0,0,0.12)] group-hover:-translate-y-1 transition-all duration-300 flex items-center justify-center overflow-hidden border border-transparent group-hover:border-gray-100">
+                            {option.imageUrl ? (
+                                <div className="relative w-full h-full p-4">
+                                    <Image
+                                        src={option.imageUrl}
+                                        alt="Visualization"
+                                        fill
+                                        className={`object-cover rounded-[1.2rem]`}
+                                        unoptimized
+                                    />
+                                </div>
+                            ) : (
+                                <div className={`w-24 h-24 rounded-full bg-gradient-to-tr from-gray-50 to-gray-100 flex items-center justify-center`}>
+                                    {/* Empty logic */}
+                                </div>
+                            )}
+
+                            {/* Hover Overlay indicating 'Pick' */}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 flex items-center justify-center">
+                                <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-gray-900 text-xs font-bold px-3 py-1 rounded-full shadow-sm transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+                                    PICK
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Typography */}
+                        <p className="text-xs text-muted-foreground font-sans tracking-wider text-center">
+                            {option.subText}
+                        </p>
+
+                        <h1 className="text-3xl mb-2 font-serif font-medium text-gray-900 tracking-tight text-center">
+                            {option.mainText}
+                        </h1>
+
+                        <h2 className="text-sm text-muted-foreground font-serif font-light tracking-[0.1em] uppercase mb-1 text-center max-w-[200px] truncate">
+                            {option.meaning}
+                        </h2>
                     </div>
-                ) : (
-                    // Empty / Loading State
-                    <div className={`w-32 h-3/4 rounded-full bg-gradient-to-tr from-gray-50 to-gray-100 flex items-center justify-center ${data.loading ? 'animate-pulse' : 'opacity-0'}`}>
+                ))}
+
+                {/* Loading State Skeleton (if initial load) */}
+                {options.length === 0 && loading && (
+                    <div className="animate-pulse flex flex-col items-center">
+                        <div className="w-48 h-48 bg-gray-100 rounded-[2rem] mb-4"></div>
+                        <div className="w-20 h-4 bg-gray-100 rounded mb-2"></div>
+                        <div className="w-32 h-8 bg-gray-100 rounded"></div>
                     </div>
                 )}
             </div>
-
-            {/* Typography */}
-            <h1 className="text-5xl mb-3 font-serif font-medium text-gray-900 tracking-tight text-center">
-                {data.mainText || input}
-            </h1>
-
-            <h2 className="text-xl text-muted-foreground font-serif font-light tracking-[0.2em] uppercase mb-1 text-center">
-                {data.meaning}
-            </h2>
-
-            <p className="text-sm text-muted-foreground font-sans tracking-wider text-center">
-                {data.subText}
-            </p>
-
         </div>
     );
 };

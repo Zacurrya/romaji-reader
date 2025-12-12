@@ -19,7 +19,10 @@ const notoSerifJP = Noto_Serif_JP({
 
 export const metadata: Metadata = {
   title: "Romaji Parser",
-  description: "Learn Kana and Vocab through Romaji",
+  description: "Learn Kana, Kanji, and Vocab through Romaji",
+  icons: {
+    icon: "/favicon.svg"
+  }
 };
 
 export default function RootLayout({

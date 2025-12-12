@@ -5,10 +5,10 @@ export type ParticleInfo = {
 };
 
 export const particlesDict: Record<string, ParticleInfo> = {
-    "wa": {
-        particle: "は (wa)",
+    "ha": {
+        particle: "は (ha)",
         definition: "Topic Marker: Indicates the topic of the sentence.",
-        structure: "[Topic] + wa + [Comment]"
+        structure: "[Topic] + ha (pronounced wa) + [Comment]"
     },
     "ga": {
         particle: "が (ga)",

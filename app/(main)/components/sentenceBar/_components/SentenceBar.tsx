@@ -12,7 +12,11 @@ export default function SentenceBar({ words }: SentenceBarProps) {
             <div className="flex flex-wrap gap-2 justify-center items-start min-h-[160px]">
                 {words.map((word, index) => (
                     // Using index in key because duplicates are allowed and order matters
-                    <SentenceCard key={`${word}-${index}`} input={word} />
+                    <SentenceCard
+                        key={`${word}-${index}`}
+                        input={word}
+                        context={words.slice(0, index)}
+                    />
                 ))}
             </div>
         </div>

@@ -8,6 +8,7 @@ import ParticleTooltip from "./ParticleTooltip";
 
 type SentenceCardProps = {
     input: string;
+    context: string[];
 };
 
 type CardData = {
@@ -18,7 +19,7 @@ type CardData = {
     loading: boolean;
 };
 
-const SentenceCard = ({ input }: SentenceCardProps) => {
+const SentenceCard = ({ input, context }: SentenceCardProps) => {
     const [data, setData] = useState<CardData>({
         meaning: "",
         kana: input,
@@ -56,9 +57,9 @@ const SentenceCard = ({ input }: SentenceCardProps) => {
 
             try {
                 // 1. Fetch Meaning
-                const meaningRes = await fetch(`/api/word-meaning?romaji=${encodeURIComponent(input)}`);
-                if (meaningRes.ok) {
-                    const json = await meaningRes.json();
+                const meanRes = await fetch(`/api/word-meaning?romaji=${encodeURIComponent(input)}&context=${encodeURIComponent(JSON.stringify(context))}`);
+                if (meanRes.ok) {
+                    const json = await meanRes.json();
                     if (json.words && json.words.length > 0) {
                         newMeaning = json.words[0].meaning.split(',')[0].trim().toUpperCase();
                         newKana = json.words[0].word || json.words[0].furigana || input;
@@ -112,7 +113,7 @@ const SentenceCard = ({ input }: SentenceCardProps) => {
         fetchData();
 
         return () => { isMounted = false; };
-    }, [input]);
+    }, [input, context]);
 
     const romajiCheck = toRomaji(input);
     const isGrammarParticle = isParticle(romajiCheck);
@@ -127,8 +128,8 @@ const SentenceCard = ({ input }: SentenceCardProps) => {
                 </div>
             )}
 
-            {/* Image Container - Height fixed at 100px for alignment, Width variable for spacing */}
-            <div className={`relative overflow-hidden rounded-2xl transition-transform duration-300 group-hover:-translate-y-1 h-[100px] flex items-center justify-center ${isGrammarParticle ? 'w-[40px] shadow-none bg-transparent' : 'w-[100px] shadow-[0_8px_20px_-8px_rgba(0,0,0,0.1)] bg-white'}`}>
+            {/* Image Container - Height fixed at 100px for alignment, Width variable for spacing. Particles aligned to bottom. */}
+            <div className={`relative overflow-hidden rounded-2xl transition-transform duration-300 group-hover:-translate-y-1 h-[100px] flex ${isGrammarParticle ? 'items-end pb-2' : 'items-center'} justify-center ${isGrammarParticle ? 'w-[40px] shadow-none bg-transparent' : 'w-[100px] shadow-[0_8px_20px_-8px_rgba(0,0,0,0.1)] bg-white'}`}>
                 {data.imageUrl ? (
                     <Image
                         src={data.imageUrl}
@@ -154,24 +155,22 @@ const SentenceCard = ({ input }: SentenceCardProps) => {
 
             {/* Typography Stack (LiveCard Style) */}
             <div className="flex flex-col items-center mt-3 space-y-0.5">
+                {/* Reading */}
+                {/* Reading (Invisible for particles to preserve height alignment) */}
+                <p className={`text-[0.9rem] text-muted-foreground/80 font-sans tracking-wider text-center ${isGrammarParticle ? 'invisible' : ''}`}>
+                    {data.subText || '\u00A0'}
+                </p>
 
                 {/* Kanji */}
-                <h1 className={`font-serif font-bold text-gray-900 tracking-tight text-center leading-tight ${isGrammarParticle ? 'text-xl text-gray-500' : 'text-xl'}`}>
+                <h1 className={`font-serif font-semibold text-gray-900 tracking-tight text-center leading-tight ${isGrammarParticle ? 'text-xl text-gray-500' : 'text-xl'}`}>
                     {data.kana}
                 </h1>
 
                 {/* Meaning (Hidden for particles/empty) */}
                 {data.meaning && !isGrammarParticle && (
-                    <h2 className="text-[0.6rem] text-muted-foreground font-serif font-light tracking-widest uppercase text-center max-w-[100px] truncate px-1">
+                    <h2 className="text-[0.8rem] text-muted-foreground font-serif font-light tracking-widest uppercase text-center max-w-[100px] truncate px-1">
                         {data.meaning}
                     </h2>
-                )}
-
-                {/* Reading */}
-                {!isGrammarParticle && (
-                    <p className="text-[0.5rem] text-muted-foreground/60 font-sans tracking-wider text-center">
-                        {data.subText}
-                    </p>
                 )}
 
             </div>
