@@ -3,10 +3,8 @@ import { useState } from "react";
 import { toKana } from "wanakana";
 import { Search } from "lucide-react";
 import LiveCard from "./search/_components/LiveCard";
-import Header from "./components/layout/Header";
-import Footer from "./components/layout/Footer";
-import SentenceBar from "./components/sentenceBar/_components/SentenceBar";
-import TranslatedSentence from "./components/sentenceBar/_components/TranslatedSentence";
+import SentenceBar from "./sentenceBar/_components/SentenceBar";
+import TranslatedSentence from "./sentenceBar/_components/TranslatedSentence";
 
 export default function Home() {
   const [input, setInput] = useState("");
@@ -56,7 +54,6 @@ export default function Home() {
 
   return (
     <div className="h-screen overflow-hidden relative">
-      <Header />
       <main className="w-full h-full flex flex-col items-center justify-center bg-[#FAFAFA]">
 
         {/* Container for Centered Content */}
@@ -98,9 +95,6 @@ export default function Home() {
           </div>
         </div>
       </main>
-      <div className="absolute bottom-0 w-full">
-        <Footer />
-      </div>
     </div>
   );
 }

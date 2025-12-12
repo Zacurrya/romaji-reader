@@ -122,3 +122,10 @@ h6 {
   font-family: var(--font-serif);
   /* Apply serif to headings */
 }
+
+/* Custom classes */
+.no-interact-text {
+  cursor: default;
+  user-select: none;
+  pointer-events: none;
+}

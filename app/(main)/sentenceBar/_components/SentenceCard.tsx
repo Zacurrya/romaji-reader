@@ -4,7 +4,7 @@ import Image from "next/image";
 import { toRomaji } from "wanakana";
 import { isParticle, getParticleInfo } from "@/utils/particles";
 import { getCachedWord, setCachedWord } from "@/utils/wordCache";
-import ParticleTooltip from "./ParticleTooltip";
+import Tooltip from "../../components/ui/Tooltip";
 
 type SentenceCardProps = {
     input: string;
@@ -119,12 +119,32 @@ const SentenceCard = ({ input, context }: SentenceCardProps) => {
     const isGrammarParticle = isParticle(romajiCheck);
     const particleInfo = isGrammarParticle ? getParticleInfo(romajiCheck) : null;
 
+    // Determine Tooltip Props
+    let tooltipProps = null;
+
+    if (isGrammarParticle && particleInfo) {
+        tooltipProps = {
+            character: particleInfo.particle.split(" ")[0],
+            type: "Particle",
+            definition: particleInfo.definition,
+            info: particleInfo.structure
+        };
+    } else if (!isGrammarParticle && data.meaning) {
+        tooltipProps = {
+            character: data.kana,
+            type: "Word", // We could infer POS if we had it, for now "Word" is fine or maybe "Noun" etc if API provided it.
+            definition: data.meaning,
+            // info could be reading
+            info: data.subText ? data.subText.replace(/\//g, '').trim() : undefined
+        };
+    }
+
     return (
         <div className="group relative flex flex-col items-center animate-in fade-in zoom-in duration-300">
-            {/* Tooltip for Particles */}
-            {particleInfo && (
+            {/* Tooltip for All Words */}
+            {tooltipProps && (
                 <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 bottom-[100px]">
-                    <ParticleTooltip info={particleInfo} />
+                    <Tooltip {...tooltipProps} />
                 </div>
             )}
 
